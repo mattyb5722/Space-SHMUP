@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Player_Movement : MonoBehaviour {
+public class PlayerManager : MonoBehaviour {
     /// <summary>
     /// Manages the player's movement
     /// </summary>
@@ -17,26 +17,27 @@ public class Player_Movement : MonoBehaviour {
 
     private Rigidbody2D body;
 
+    private bool standardShot = true;
+
     private void Awake() {
         leftEngine = GetComponentsInChildren<ParticleSystem>() [0];
         rightEngine = GetComponentsInChildren<ParticleSystem>() [1];
         lastfire = fireRate;
         body = GetComponent<Rigidbody2D>();
-}
+    }
 
-    private void FixedUpdate()
-    {
-        if (Input.GetKey(KeyCode.W)){       // Moving forward
+    private void FixedUpdate() {
+        if (Input.GetKey(KeyCode.W)) {       // Moving forward
             leftEngine.Play();
             rightEngine.Play();
             body.AddForce(transform.up * 1.5f);
         }
-        if (Input.GetKeyUp(KeyCode.W)){
+        if (Input.GetKeyUp(KeyCode.W)) {
             leftEngine.Stop();
             rightEngine.Stop();
         }
 
-        if (Input.GetKey(KeyCode.S)){         // Moving backwards
+        if (Input.GetKey(KeyCode.S)) {         // Moving backwards
             leftEngine.Play();
             rightEngine.Play();
             body.AddForce(transform.up * -1.5f);
@@ -64,14 +65,19 @@ public class Player_Movement : MonoBehaviour {
 
         if (Input.GetKey(KeyCode.Space)) {      // Shoot
             if (lastfire > fireRate) {
-                GamePlayManager.instance.CreateBullet(gameObject);
+                if (standardShot) {
+                    GamePlayManager.instance.SingleShot(gameObject);
+                } else {
+                    GamePlayManager.instance.LaserShot(gameObject);
+                    standardShot = true;
+                }
                 lastfire = 0;
             }
         }
         lastfire++;
 
-        if (transform.position.x < -1* boarderX) {      // Left border of the screen
-            transform.position = new Vector3(-1* boarderX, transform.position.y, 0f);
+        if (transform.position.x < -1 * boarderX) {      // Left border of the screen
+            transform.position = new Vector3(-1 * boarderX, transform.position.y, 0f);
         } else if (transform.position.x > boarderX) {   // Right border of the screen
             transform.position = new Vector3(boarderX, transform.position.y, 0f);
         }
@@ -79,6 +85,13 @@ public class Player_Movement : MonoBehaviour {
             transform.position = new Vector3(transform.position.x, -1 * boarderY, 0f);
         } else if (transform.position.y > boarderY) {   // Top border of the screen
             transform.position = new Vector3(transform.position.x, boarderY, 0f);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision) {
+        if (collision.gameObject.tag == "Upgrade") {         // Hit by an upgrade
+            standardShot = false;
+            Destroy(collision.gameObject);                  // Destroy Asteroid
         }
     }
 }

@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Bullet
+  - Laser
+  - Single Asteroid
+  - Multi Asteroid
+  - Upgrade
   layers:
   - Default
   - TransparentFX

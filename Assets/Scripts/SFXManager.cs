@@ -1,28 +1,25 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class SFXManager : MonoBehaviour {
     /// <summary>
     /// This script manages the background music as well as the 
-    /// sound made when an apple is caught.
+    /// sound made when an enemy is hit.
     /// </summary>
  
-    public static SFXManager instance = null; // Instance of this class
+    public static SFXManager instance = null;   // Instance of this class
 
     [Header("Background")]
-    public AudioSource backgroundSource;    // Music Sourse
+    public AudioSource backgroundSource;        // Music Sourse
     [Range(0, 1)]
-    public float backgroundVolume;          // Music Volume
+    public float backgroundVolume;              // Music Volume
 
     [Header("Sound Effect")]
-    public AudioSource soundEffectSource;      // Effect Sourse
-    public AudioClip soundEffectClip;          // Effect Clip
+    public AudioSource soundEffectSource;       // Effect Sourse
+    public AudioClip soundEffectClip;           // Effect Clip
     [Range(0, 1)]
-    public float soundEffectVolume;            // Effect Volume
+    public float soundEffectVolume;             // Effect Volume
 
-    public void Awake()
-    {
+    public void Awake(){
         // Creates instance of this class
         if (instance == null){ instance = this; }
         else{ Destroy(gameObject); }
@@ -75,7 +72,7 @@ public class SFXManager : MonoBehaviour {
         instance.soundEffectSource.volume = instance.soundEffectVolume; // Set Effect Volume
 
     }
-    // DEcreasing the Effect Volume
+    // Decreasing the Effect Volume
     public void EffectVolumeDown()
     {
         instance.soundEffectVolume -= .1f;
@@ -87,9 +84,8 @@ public class SFXManager : MonoBehaviour {
         instance.soundEffectSource.volume = instance.soundEffectVolume; // Set Effect Volume
 
     }
-    // Sound of catching an apple
-    public void SoundEffectPlay()
-    {
+    // Sound of an asteroid being destroyed
+    public void SoundEffectPlay(){
         soundEffectSource.PlayOneShot(soundEffectClip);
     }
 }

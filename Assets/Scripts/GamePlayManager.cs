@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Assets.Scripts;
 
 public class GamePlayManager : MonoBehaviour {
     /// <summary>
@@ -11,21 +11,25 @@ public class GamePlayManager : MonoBehaviour {
     public static GamePlayManager instance = null;
 
     public GameObject player;
-    public GameObject asteroidSprite;
+    public GameObject singleAsteroidSprite;
+    public GameObject multiAsteroidSprite;
     public GameObject bulletSprite;
+    public GameObject laserSprite;
+    public GameObject laserUpgradeSprite;
 
-    private List<GameObject> asteroids = new List<GameObject>();
-    private List<GameObject> bullets = new List<GameObject>();
+    private List<Enemy> enemies = new List<Enemy>();
+    private List<Bullet> bullets = new List<Bullet>();
+    private List<GameObject> upgrades = new List<GameObject>();
 
-    private float asteroidsRandomChange = .03f;  // Chance of spawning an asteroid
+    private float asteroidsRandomChange = .03f;     // Chance of spawning an asteroid
 
     public Text playerScoreText;
     private int playerScore = 0;
 
     public Text timeLeftText;
-    private float timeLeft = 100;
+    private float timeLeft = 60;                    // Seconds left in the game
 
-    private float lastupdate = 0;
+    private float lastUpdate = 0;                   // Time since last counter decrease
 
     private void Awake() {
         if (instance == null) { instance = this; } 
@@ -38,61 +42,106 @@ public class GamePlayManager : MonoBehaviour {
     }
 
     private void FixedUpdate() {
-        if (lastupdate == 10) {
-            timeLeft -= 1f;
-            if (timeLeft == 0) {
+        if (lastUpdate == 50) {                     // Happens once per secound
+            timeLeft -= 1f;                         // Decrease game counter
+            if (timeLeft == 0) {                    // If the game is over
                 Restart();
             }
-            lastupdate = 0;
+            lastUpdate = 0;                         // Reset the once per secound counter
         }
-        if (Random.value <= asteroidsRandomChange) { // Apple is being made
-            CreateAsteroid();
+        if (Random.value <= asteroidsRandomChange) { // Spawn a standard asteroid
+            CreateSingleAsteroid();
         }
-        lastupdate++;
+        if (lastUpdate == 0 && timeLeft % 10 == 0) { // Spawn a multi asteroid
+            CreateMultiAsteroid();
+        }
+        if (lastUpdate == 0 && timeLeft % 20 == 0) { // Spawn a laser upgrade
+            CreateLaserUpgrade();
+        }
+
+        foreach (Bullet temp in bullets.ToArray()) { // Move bullets
+            temp.Move();
+        }
+        foreach (Enemy temp in enemies.ToArray()) { // Move enemies
+            temp.Move();
+        }
+
+        lastUpdate++;                               // Update the once per secound counter
     }
 
-    private void Restart() {                        // Restart Game
+    // Restart the game
+    private void Restart() {
         SceneChanger.instance.ChangeScene("Game Over"); // Change Scene
         HighScoreManager.instance.NewHighScore(playerScore); // Update High Scores
-
-        for (int i = 0; i < asteroids.Count; i++) {
-            Destroy(asteroids [i]);             // Destroy all apple objects
+        
+        for (int i = 0; i < enemies.Count; i++) {   // Fore each enemy
+            Destroy(enemies [i].thisObject);        // Destroy enemy
         }
-        asteroids.Clear();                     // Clear list
+        enemies = new List<Enemy>();                // Clear list
 
-        for (int i = 0; i < bullets.Count; i++) {
-            Destroy(bullets [i]);             // Destroy all apple objects
+        for (int i = 0; i < bullets.Count; i++) {   // For each bullet
+            Destroy(bullets [i].thisObject);        // Destroy bullet
         }
-        bullets.Clear();                     // Clear list
+        bullets = new List<Bullet>();               // Clear list
 
-        playerScore = 0;                    // Reset score
-        lastupdate = 0;
+        for (int i = 0; i < upgrades.Count; i++) {  // For each upgrade pack
+            Destroy(upgrades [i]);                  // Destroy upgrade pack
+        }
+        upgrades = new List<GameObject>();          // Clear list
+
+        playerScore = 0;                            // Reset score
+        lastUpdate = 0;                             // Reset timer
         player.transform.SetPositionAndRotation(Vector3.zero, new Quaternion(0, 0, 0, 0));
 
     }
 
-    public void PlayerHit() { 
-        SFXManager.instance.SoundEffectPlay();        // Play sound effect
-        Restart();                    // Restart game
+    // When the player is hit
+    public void PlayerHit() {
+        SFXManager.instance.SoundEffectPlay();      // Play sound effect
+        Restart();                                  // Restart game
     }
 
-    public void PlayerScored(GameObject asteroid) {
-        SFXManager.instance.SoundEffectPlay();        // Play sound effect
-        playerScore += 10;
-        RemoveAsteroid(asteroid);
+    // When the player scores
+    public void PlayerScored() {
+        SFXManager.instance.SoundEffectPlay();      // Play sound effect
+        playerScore += 10;                          // Incroment score
     }
 
-    public void RemoveAsteroid(GameObject asteroid) {
-        asteroids.Remove(asteroid);            // Remove apple from list
-        Destroy(asteroid);             // Destroy all apple objects
+    // Remove a buller from the game
+    public void RemoveBullet(Bullet bullet) {
+        bullets.Remove(bullet);                     // Remove bullet from list
+        Destroy(bullet.thisObject);                 // Destroy bullet
     }
 
-    public void CreateAsteroid() {
-        asteroids.Add(Asteroid.Create(asteroidSprite));
+    // Spawn Standard enemy with a random position around the boarder
+    public void CreateSingleAsteroid() {
+        enemies.Add(new SingleAsteroid(singleAsteroidSprite));
     }
 
-    public void CreateBullet(GameObject player) {
-        bullets.Add(Bullet.Create(bulletSprite, player));
+    // Spawn Standard enemy with a certain position
+    public void CreateSingleAsteroid(Vector3 position) {  
+        enemies.Add(new SingleAsteroid(singleAsteroidSprite, position));
     }
 
+    // Spawn a multi enemy with a random position around the boarder
+    public void CreateMultiAsteroid() {
+        enemies.Add(new MultiAsteroid(multiAsteroidSprite));
+    }
+
+    // Spawn a single bullet
+    public void SingleShot(GameObject player) {
+        Bullet temp = new SingleShot(bulletSprite, player);
+        bullets.Add(temp);
+    }
+
+    // Spawn a laser
+    public void LaserShot(GameObject player) {
+        Bullet temp = new Laser(laserSprite, player);
+        bullets.Add(temp);
+    }
+
+    // Spawn a laser upgrade pack
+    public void CreateLaserUpgrade() {
+        upgrades.Add(LaserUpgrade.instance.Create(laserUpgradeSprite));
+    }
 }
